@@ -12,37 +12,30 @@ pipeline {
                 }
                 withCredentials([usernamePassword(credentialsId: 'vps-credentials', usernameVariable: 'VPS_USER', passwordVariable: 'VPS_PASS')]) {
                     sh '''
-                        # Create project directory first
-                        sshpass -p ${VPS_PASS} ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${VPS_USER}@${VPS_IP} "mkdir -p /home/${VPS_USER}/devops-project-2"
-
-                        # Copy docker-compose.yml
-                        sshpass -p ${VPS_PASS} scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null docker-compose.yml ${VPS_USER}@${VPS_IP}:/home/${VPS_USER}/devops-project-2/docker-compose.yml
+                        PROJECT_DIR="/home/${VPS_USER}/devops-project-2"
                         
-                        # Create monitoring directory and copy config
-                        sshpass -p ${VPS_PASS} ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${VPS_USER}@${VPS_IP} "mkdir -p /home/${VPS_USER}/devops-project-2/monitoring"
-                        sshpass -p ${VPS_PASS} scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null monitoring/prometheus.yml ${VPS_USER}@${VPS_IP}:/home/${VPS_USER}/devops-project-2/monitoring/prometheus.yml
-
-                        # Deploy - create and execute deployment script
-                        cat > /tmp/deploy.sh << 'DEPLOY_EOF'
-cd /home/${VPS_USER}/devops-project-2
-echo "DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME_USR}" > .env
-cat .env
-
-# Try docker compose first, fall back to docker-compose
-if docker compose version &> /dev/null; then
-    echo "Using: docker compose"
-    docker compose pull
-    docker compose up -d
-else
-    echo "Using: docker-compose"
-    docker-compose pull
-    docker-compose up -d
-fi
-DEPLOY_EOF
-
-                        # Execute deployment script on VPS
-                        sshpass -p ${VPS_PASS} scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /tmp/deploy.sh ${VPS_USER}@${VPS_IP}:/home/${VPS_USER}/deploy.sh
-                        sshpass -p ${VPS_PASS} ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${VPS_USER}@${VPS_IP} "chmod +x /home/${VPS_USER}/deploy.sh && /home/${VPS_USER}/deploy.sh"
+                        # 1. Create project directory
+                        sshpass -p ${VPS_PASS} ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${VPS_USER}@${VPS_IP} "mkdir -p ${PROJECT_DIR}/monitoring"
+                        
+                        # 2. Copy all necessary files
+                        sshpass -p ${VPS_PASS} scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null docker-compose.yml ${VPS_USER}@${VPS_IP}:${PROJECT_DIR}/
+                        sshpass -p ${VPS_PASS} scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null monitoring/prometheus.yml ${VPS_USER}@${VPS_IP}:${PROJECT_DIR}/monitoring/
+                        
+                        # 3. Verify files exist on VPS
+                        sshpass -p ${VPS_PASS} ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${VPS_USER}@${VPS_IP} "ls -la ${PROJECT_DIR}/"
+                        
+                        # 4. Deploy - Execute directly on VPS
+                        sshpass -p ${VPS_PASS} ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${VPS_USER}@${VPS_IP} "
+                            cd ${PROJECT_DIR} && \
+                            echo 'DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME_USR}' > .env && \
+                            echo '.env file:' && \
+                            cat .env && \
+                            echo 'Files:' && \
+                            ls -la && \
+                            docker-compose pull && \
+                            docker-compose up -d && \
+                            docker ps
+                        "
                     '''
                 }
             }
