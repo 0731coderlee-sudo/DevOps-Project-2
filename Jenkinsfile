@@ -9,7 +9,7 @@ pipeline {
     // }
     agent any
     environment {
-        DOCKER_CRED = credentials('dockerhub-username')
+        DOCKER_CRED =  credentials('dockerhub-username')
         IMAGE_TAG = "latest"
     }
     stages {

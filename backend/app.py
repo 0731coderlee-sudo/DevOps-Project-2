@@ -12,7 +12,7 @@ app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
 
 @app.route('/api/data')
 def get_data():
-    return jsonify({"message": "Hello from Backend!", "timestamp": time.time()})
+    return jsonify({"message": "  Hello from Backend!", "timestamp": time.time()})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
