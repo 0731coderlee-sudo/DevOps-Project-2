@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'ubuntu:latest'
-            args '-u root'
-        }
-    }
+    agent any
     environment {
         VPS_IP = credentials('vps-ip')
         DOMAIN_NAME = credentials('DEVOPS2_DOMAIN')
@@ -14,7 +9,7 @@ pipeline {
             steps {
                 script {
                     // Install Ansible and sshpass
-                    sh 'apt-get update && apt-get install -y ansible sshpass'
+                    sh 'which ansible || (apt-get update && apt-get install -y ansible sshpass git curl wget openssh-client)'
                 }
                 withCredentials([usernamePassword(credentialsId: 'vps-credentials', usernameVariable: 'VPS_USER', passwordVariable: 'VPS_PASS')]) {
                     sh """

@@ -16,6 +16,10 @@
           - nginx
           - certbot
           - python3-certbot-nginx
+          - git
+          - curl
+          - wget
+          - docker.io
         state: present
 
     - name: Start and enable Nginx
@@ -23,6 +27,18 @@
         name: nginx
         state: started
         enabled: yes
+
+    - name: Start and enable Docker
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Ensure docker socket has correct permissions
+      file:
+        path: /var/run/docker.sock
+        mode: '0666'
+      ignore_errors: yes
 
     - name: Disable default Nginx configuration
       file:
