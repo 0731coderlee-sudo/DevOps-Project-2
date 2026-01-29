@@ -31,11 +31,11 @@ pipeline {
                             echo '.env file:' && \
                             cat .env && \
                             echo 'Stopping old containers...' && \
-                            docker-compose down --remove-orphans || true && \
+                            (docker compose down --remove-orphans || docker-compose down --remove-orphans || true) && \
                             echo 'Pulling new images...' && \
-                            docker-compose pull && \
+                            (docker compose pull || docker-compose pull) && \
                             echo 'Starting containers...' && \
-                            docker-compose up -d --no-build && \
+                            (docker compose up -d --no-build || docker-compose up -d --no-build) && \
                             echo 'Running containers:' && \
                             docker ps
                         "
