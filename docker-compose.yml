@@ -21,26 +21,26 @@ services:
       - backend_net
     environment:
       - FLASK_ENV=production
-  # Monitoring
-  # prometheus:
-  #   image: prom/prometheus
-  #   volumes:
-  #     - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-  #   ports:
-  #     - "9090:9090"
-  #   networks:
-  #     - backend_net
+  Monitoring
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - backend_net
 
-  # grafana:
-  #   image: grafana/grafana
-  #   ports:
-  #     - "3001:3000"
-  #   networks:
-  #     - backend_net
-  #   environment:
-  #     - GF_SECURITY_ADMIN_PASSWORD=admin
-  #   depends_on:
-  #     - prometheus
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3001:3000"
+    networks:
+      - backend_net
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
 
 networks:
   frontend_net:
