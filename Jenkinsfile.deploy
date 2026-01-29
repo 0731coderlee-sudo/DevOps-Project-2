@@ -30,10 +30,13 @@ pipeline {
                             echo 'DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME_USR}' > .env && \
                             echo '.env file:' && \
                             cat .env && \
-                            echo 'Files:' && \
-                            ls -la && \
+                            echo 'Stopping old containers...' && \
+                            docker-compose down --remove-orphans || true && \
+                            echo 'Pulling new images...' && \
                             docker-compose pull && \
+                            echo 'Starting containers...' && \
                             docker-compose up -d --no-build && \
+                            echo 'Running containers:' && \
                             docker ps
                         "
                     '''
