@@ -30,6 +30,7 @@ services:
     ports:
       - "9090:9090"
     networks:
+      - frontend_net
       - backend_net
 
   grafana:
@@ -37,6 +38,7 @@ services:
     ports:
       - "3001:3000"
     networks:
+      - frontend_net
       - backend_net
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
