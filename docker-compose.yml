@@ -21,7 +21,8 @@ services:
       - backend_net
     environment:
       - FLASK_ENV=production
-  Monitoring
+
+  # Monitoring
   prometheus:
     image: prom/prometheus
     volumes:
