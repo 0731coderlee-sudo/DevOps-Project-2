@@ -1,0 +1,57 @@
+---
+- name: Setup VPS with Docker, Nginx, and SSL
+  hosts: all
+  become: yes
+  vars:
+    frontend_port: 57002
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install required packages
+      apt:
+        name:
+          - nginx
+          - certbot
+          - python3-certbot-nginx
+        state: present
+
+    - name: Start and enable Nginx
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Disable default Nginx configuration
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Deploy Nginx configuration
+      template:
+        src: nginx.conf.j2
+        dest: "/etc/nginx/sites-available/{{ domain_name }}"
+      notify: Restart Nginx
+
+    - name: Enable Nginx configuration
+      file:
+        src: "/etc/nginx/sites-available/{{ domain_name }}"
+        dest: "/etc/nginx/sites-enabled/{{ domain_name }}"
+        state: link
+
+    - name: Reload Nginx to apply config
+      service:
+        name: nginx
+        state: reloaded
+
+    - name: Obtain SSL certificate
+      command: certbot --nginx -d {{ domain_name }} --non-interactive --agree-tos -m admin@{{ domain_name }}
+      ignore_errors: yes
+
+  handlers:
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted

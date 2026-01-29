@@ -1,0 +1,48 @@
+services:
+  devops-project-2-frontend:
+    build: ./frontend
+    image: ${DOCKERHUB_USERNAME}/devops-project-2-frontend:latest
+    ports:
+      - "57002:3000"
+    networks:
+      - frontend_net
+    environment:
+      - NEXT_PUBLIC_API_URL=/api
+    depends_on:
+      - devops-project-2-backend
+
+  devops-project-2-backend:
+    build: ./backend
+    image: ${DOCKERHUB_USERNAME}/devops-project-2-backend:latest
+    expose:
+      - "5000"
+    networks:
+      - frontend_net
+      - backend_net
+    environment:
+      - FLASK_ENV=production
+  # Monitoring
+  # prometheus:
+  #   image: prom/prometheus
+  #   volumes:
+  #     - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+  #   ports:
+  #     - "9090:9090"
+  #   networks:
+  #     - backend_net
+
+  # grafana:
+  #   image: grafana/grafana
+  #   ports:
+  #     - "3001:3000"
+  #   networks:
+  #     - backend_net
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #   depends_on:
+  #     - prometheus
+
+networks:
+  frontend_net:
+  backend_net:
+    internal: true

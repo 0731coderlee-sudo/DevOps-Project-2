@@ -1,0 +1,33 @@
+pipeline {
+    agent {
+        docker {
+            image 'ubuntu:latest'
+            args '-u root'
+        }
+    }
+    environment {
+        VPS_IP = credentials('vps-ip')
+        DOMAIN_NAME = credentials('DEVOPS2_DOMAIN')
+    }
+    stages {
+        stage('Setup Infrastructure') {
+            steps {
+                script {
+                    // Install Ansible and sshpass
+                    sh 'apt-get update && apt-get install -y ansible sshpass'
+                }
+                withCredentials([usernamePassword(credentialsId: 'vps-credentials', usernameVariable: 'VPS_USER', passwordVariable: 'VPS_PASS')]) {
+                    sh """
+                        # Create ansible inventory file
+                        echo "[all]" > ansible/inventory.ini
+                        echo "${VPS_IP} ansible_user=${VPS_USER} ansible_password=${VPS_PASS} ansible_ssh_common_args='-o StrictHostKeyChecking=no'" >> ansible/inventory.ini
+
+                        # Run Playbook
+                        # We pass the domain_name variable to the playbook
+                        ansible-playbook -i ansible/inventory.ini ansible/playbook.yaml -e "domain_name=${DOMAIN_NAME}"
+                    """
+                }
+            }
+        }
+    }
+}

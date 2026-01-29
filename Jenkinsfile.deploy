@@ -1,0 +1,42 @@
+pipeline {
+    agent {
+        docker {
+            image 'ubuntu:latest'
+            args '-u root'
+        }
+    }
+    environment {
+        VPS_IP = credentials('vps-ip')
+        DOCKERHUB_USERNAME = credentials('dockerhub-username')
+    }
+    stages {
+        stage('Deploy to VPS') {
+            steps {
+                script {
+                    sh 'apt-get update && apt-get install -y sshpass openssh-client'
+                }
+                withCredentials([usernamePassword(credentialsId: 'vps-credentials', usernameVariable: 'VPS_USER', passwordVariable: 'VPS_PASS')]) {
+                    sh """
+                        # Create project directory first
+                        sshpass -p \$VPS_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${VPS_USER}@${VPS_IP} 'mkdir -p /home/${VPS_USER}/devops-project-2'
+
+                        # Copy docker-compose.yml
+                        sshpass -p \$VPS_PASS scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null docker-compose.yml ${VPS_USER}@${VPS_IP}:/home/${VPS_USER}/devops-project-2/docker-compose.yml
+                        
+                        # Create monitoring directory and copy config
+                        sshpass -p \$VPS_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${VPS_USER}@${VPS_IP} 'mkdir -p /home/${VPS_USER}/devops-project-2/monitoring'
+                        sshpass -p \$VPS_PASS scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null monitoring/prometheus.yml ${VPS_USER}@${VPS_IP}:/home/${VPS_USER}/devops-project-2/monitoring/prometheus.yml
+
+                        # Deploy
+                        sshpass -p \$VPS_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${VPS_USER}@${VPS_IP} '
+                            cd /home/${VPS_USER}/devops-project-2
+                            echo "DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME_USR}" > .env
+                            docker compose pull
+                            docker compose up -d
+                        '
+                    """
+                }
+            }
+        }
+    }
+}
